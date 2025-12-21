@@ -118,6 +118,7 @@
 
             <!-- USERNAME -->
             <TextBox
+                x:Name="UsernameBox"
                 Width="300"
                 Height="40"
                 Style="{StaticResource WatermarkTextBox}"
@@ -128,6 +129,7 @@
 
             <!-- PASSWORD -->
             <TextBox
+                x:Name="PasswordBox"
                 Width="300"
                 Height="40"
                 Style="{StaticResource WatermarkTextBox}"
@@ -149,7 +151,8 @@
                 BorderThickness="1"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Top"
-                Margin="80,230,0,0"/>
+                Margin="80,230,0,0"
+                Click="Play_Click"/>
         </Grid>
     </Grid>
 </Window>
