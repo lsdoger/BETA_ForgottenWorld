@@ -3,7 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Launcher"
              StartupUri="MainWindow.xaml">
+
     <Application.Resources>
-         
+        <local:EmptyTextToVisibilityConverter x:Key="EmptyTextToVisibilityConverter"/>
     </Application.Resources>
+
 </Application>
