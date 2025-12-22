@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Media.Animation;
 
 namespace Launcher
 {
@@ -77,7 +78,6 @@ namespace Launcher
 
             // ✅ ВІДКРИВАЄМО LoggedInPage І ПЕРЕДАЄМО СЕСІЮ
             var page = new LoggedInPage(session);
-            MessageBox.Show("Username = " + session.Username);
             page.Show();
 
             this.Close(); // закриваємо login
@@ -98,6 +98,42 @@ namespace Launcher
         {
             Application.Current.Shutdown();
         }
+
+        // Метод для згортання вікна
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            // 1. Створюємо анімацію зникнення (Opacity від 1 до 0)
+            DoubleAnimation fadeOut = new DoubleAnimation
+            {
+                To = 0.0,
+                Duration = new Duration(TimeSpan.FromSeconds(0.3)) // Швидкість анімації
+            };
+
+            // 2. Що робити, коли анімація закінчилась
+            fadeOut.Completed += (s, _) =>
+            {
+                this.WindowState = WindowState.Minimized;
+
+                // ВАЖЛИВО: Повертаємо прозорість назад, щоб коли ми розгорнемо вікно, воно не було невидимим
+                this.BeginAnimation(UIElement.OpacityProperty, null);
+                this.Opacity = 1.0;
+            };
+
+            // 3. Запускаємо анімацію
+            this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+        }
+
+        // Метод для відкриття налаштувань
+        private void Settings_Click(object sender, RoutedEventArgs e)
+        {
+            // Створюємо нове вікно налаштувань
+            SettingsWindow settingsWin = new SettingsWindow();
+            // Встановлюємо головне вікно як власника, щоб налаштування відкривались поверх
+            settingsWin.Owner = this;
+            // Відкриваємо як діалогове вікно (блокує головне вікно, поки не закриєш налаштування)
+            settingsWin.ShowDialog();
+        }
+
     }
 
     public class AuthResponse

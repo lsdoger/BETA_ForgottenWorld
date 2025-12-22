@@ -7,21 +7,20 @@
         Width="800"
         WindowStyle="None"
         AllowsTransparency="True"
-        Background="Transparent">
+        Background="Transparent"
+        WindowStartupLocation="CenterScreen">
 
-    <!-- ================= RESOURCES ================= -->
     <Window.Resources>
 
-        <!-- Watermark TextBox Style -->
         <Style x:Key="WatermarkTextBox" TargetType="TextBox">
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="#111111"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="White"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="CaretBrush" Value="White"/>
-
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
@@ -29,39 +28,76 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
-
+                                CornerRadius="6">
                             <Grid>
-
-                                <!-- ВАЖЛИВО: ContentHost без Margin -->
-                                <ScrollViewer
-                                    x:Name="PART_ContentHost"
-                                    Background="Transparent"/>
-
-                                <!-- Placeholder -->
-                                <TextBlock
-                                    Text="{TemplateBinding Tag}"
-                                    Foreground="#888"
-                                    Margin="{TemplateBinding Padding}"
-                                    VerticalAlignment="Center"
-                                    IsHitTestVisible="False"
-                                    Visibility="{Binding Text,
-                                        RelativeSource={RelativeSource TemplatedParent},
-                                        Converter={StaticResource EmptyTextToVisibilityConverter}}"/>
-
+                                <ScrollViewer x:Name="PART_ContentHost" Background="Transparent"/>
+                                <TextBlock Text="{TemplateBinding Tag}"
+                                           Foreground="#888"
+                                           Margin="{TemplateBinding Padding}"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False"
+                                           Visibility="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource EmptyTextToVisibilityConverter}}"/>
                             </Grid>
                         </Border>
-
-                        <!-- Focus -->
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="Border" Property="BorderBrush" Value="#4FC3F7"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Border" Property="Opacity" Value="0.5"/>
+                                <Setter TargetName="Border" Property="Background" Value="#222"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#22FFFFFF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#44FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="White"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TopBarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -69,90 +105,87 @@
 
     </Window.Resources>
 
-    <!-- ================= LAYOUT ================= -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- TOP BAR -->
         <Border Grid.Row="0"
                 Background="#CC000000"
-                BorderBrush="White"
+                BorderBrush="#33FFFFFF"
                 BorderThickness="0,0,0,1"
                 MouseDown="TopMenu_MouseDown">
             <Grid>
-                <TextBlock Text="ForgottenWorld"
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" 
+                           Text="ForgottenWorld"
                            Foreground="White"
                            VerticalAlignment="Center"
                            Margin="15,0,0,0"
                            FontWeight="Bold"/>
 
-                <Button Content="✕"
-                        HorizontalAlignment="Right"
-                        Width="40"
-                        Background="Transparent"
-                        Foreground="White"
-                        BorderThickness="0"
-                        Click="Button_Close_Click"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+
+                    <Button Content="⚙" Width="40" Height="40"
+                            Style="{StaticResource TopBarButtonStyle}"
+                            FontSize="18"
+                            Click="Settings_Click"/>
+
+                    <Button Content="_" Width="40" Height="40"
+                            Style="{StaticResource TopBarButtonStyle}"
+                            FontSize="16" FontWeight="Bold"
+                            VerticalContentAlignment="Bottom" Padding="0,0,0,12"
+                            Click="Minimize_Click"/>
+
+                    <Button Content="✕" Width="40" Height="40"
+                            FontSize="16"
+                            Click="Button_Close_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource TopBarButtonStyle}">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Foreground" Value="#FF5555"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- MAIN CONTENT -->
         <Grid Grid.Row="1">
-
-            <!-- BACKGROUND -->
-            <Image Source="pack://application:,,,/Assets/bg.jpg"
-                   Stretch="UniformToFill"/>
-
-            <!-- OVERLAY -->
+            <Image Source="pack://application:,,,/Assets/bg.jpg" Stretch="UniformToFill"/>
             <Rectangle>
                 <Rectangle.Fill>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#AA000000" Offset="0"/>
-                        <GradientStop Color="#FF000000" Offset="1"/>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#CC000000" Offset="0"/>
+                        <GradientStop Color="#99000000" Offset="1"/>
                     </LinearGradientBrush>
                 </Rectangle.Fill>
             </Rectangle>
 
-            <!-- USERNAME -->
-            <TextBox
-                x:Name="UsernameBox"
-                Width="300"
-                Height="40"
-                Style="{StaticResource WatermarkTextBox}"
-                Tag="Username"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                Margin="80,100,0,0"/>
+            <Grid Margin="80,0,0,0">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <TextBlock Text="WELCOME," Foreground="#AAAAAA" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                    <TextBlock Text="LOGIN TO PLAY" Foreground="White" FontSize="32" FontWeight="Bold" Margin="0,0,0,30">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="2" Opacity="0.8"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
 
-            <!-- PASSWORD -->
-            <TextBox
-                x:Name="PasswordBox"
-                Width="300"
-                Height="40"
-                Style="{StaticResource WatermarkTextBox}"
-                Tag="Password"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                Margin="80,160,0,0"/>
+                    <TextBox x:Name="UsernameBox" Width="300" Height="45" Style="{StaticResource WatermarkTextBox}" Tag="Username" Margin="0,0,0,15"/>
+                    <TextBox x:Name="PasswordBox" Width="300" Height="45" Style="{StaticResource WatermarkTextBox}" Tag="Password" Margin="0,0,0,30"/>
 
-            <!-- BUTTON -->
-            <Button
-                Width="200"
-                Height="45"
-                Content="PLAY"
-                FontWeight="Bold"
-                FontSize="15"
-                Foreground="White"
-                Background="Transparent"
-                BorderBrush="White"
-                BorderThickness="1"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                Margin="80,230,0,0"
-                Click="Play_Click"/>
+                    <Button Content="PLAY" Width="200" Height="50" HorizontalAlignment="Left" Click="Play_Click"/>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Window>
