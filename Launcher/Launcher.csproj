@@ -1,27 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWPF>true</UseWPF>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Assets\bg.jpg" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="CmlLib.Core" Version="4.0.6" />
+		<PackageReference Include="CmlLib.Core.Auth.Microsoft" Version="3.3.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Resource Include="Assets\bg.jpg">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="Assets\bg.jpg" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ApplicationDefinition Update="App.xaml">
-      <CopyToOutputDirectory></CopyToOutputDirectory>
-    </ApplicationDefinition>
-  </ItemGroup>
+	<ItemGroup>
+		<Resource Include="Assets\bg.jpg">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+	</ItemGroup>
 
 </Project>

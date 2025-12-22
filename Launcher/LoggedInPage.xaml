@@ -1,13 +1,10 @@
 ﻿<Window x:Class="Launcher.LoggedInPage"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="LoggedInPage"
-        Height="450"
-        Width="800"
+        Title="Launcher" Height="450" Width="800"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
-        Opacity="0" 
         WindowStartupLocation="CenterScreen">
 
     <Window.Triggers>
@@ -32,12 +29,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="ItemBorder" 
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="White"
-                                BorderThickness="1"
-                                CornerRadius="4"
-                                Padding="12,8">
+                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" BorderBrush="White" BorderThickness="1" CornerRadius="4" Padding="12,8">
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -53,11 +45,6 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style>
-
-        <Style TargetType="ListBox">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
         <Style x:Key="TopBarButtonStyle" TargetType="Button">
@@ -88,37 +75,16 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0"
-                Background="#CC000000"
-                BorderBrush="#33FFFFFF"
-                BorderThickness="0,0,0,1"
-                MouseDown="TopMenu_MouseDown">
+        <Border Grid.Row="0" Background="#CC000000" BorderBrush="#33FFFFFF" BorderThickness="0,0,0,1" MouseDown="TopMenu_MouseDown">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-
-                <TextBlock Grid.Column="0"
-                           Text="ForgottenWorld"
-                           Foreground="White"
-                           VerticalAlignment="Center"
-                           Margin="15,0,0,0"
-                           FontWeight="Bold"/>
-
+                <TextBlock Grid.Column="0" Text="ForgottenWorld Launcher" Foreground="White" VerticalAlignment="Center" Margin="15,0,0,0" FontWeight="Bold"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-
-                    <Button Content="_"
-                            Width="40" Height="40"
-                            Style="{StaticResource TopBarButtonStyle}"
-                            FontSize="16" FontWeight="Bold"
-                            VerticalContentAlignment="Bottom" Padding="0,0,0,12"
-                            Click="Minimize_Click"/>
-
-                    <Button Content="✕"
-                            Width="40" Height="40"
-                            FontSize="16"
-                            Click="Close_Click">
+                    <Button Content="_" Width="40" Height="40" Style="{StaticResource TopBarButtonStyle}" FontSize="16" FontWeight="Bold" VerticalContentAlignment="Bottom" Padding="0,0,0,12" Click="Minimize_Click"/>
+                    <Button Content="✕" Width="40" Height="40" FontSize="16" Click="Close_Click">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource TopBarButtonStyle}">
                                 <Style.Triggers>
@@ -134,8 +100,7 @@
         </Border>
 
         <Grid Grid.Row="1">
-            <Image Source="pack://application:,,,/Assets/bg.jpg" Stretch="UniformToFill"/>
-
+            <Image Source="/Assets/bg.jpg" Stretch="UniformToFill"/>
             <Rectangle>
                 <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -153,26 +118,13 @@
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left">
                     <TextBlock Text="WELCOME BACK," Foreground="#AAAAAA" FontSize="14" FontWeight="SemiBold"/>
-
-                    <TextBlock x:Name="UsernameText"
-                               Text="PLAYER"
-                               Foreground="White"
-                               FontSize="48"
-                               FontWeight="Bold"
-                               Margin="0,-5,0,30">
+                    <TextBlock x:Name="UsernameText" Text="PLAYER" Foreground="White" FontSize="48" FontWeight="Bold" Margin="0,-5,0,30">
                         <TextBlock.Effect>
                             <DropShadowEffect Color="Black" BlurRadius="15" ShadowDepth="2" Opacity="0.8"/>
                         </TextBlock.Effect>
                     </TextBlock>
 
-                    <Button Content="PLAY SELECTED"
-                            Width="250" Height="55"
-                            HorizontalAlignment="Left"
-                            FontWeight="Bold" FontSize="16"
-                            Foreground="White" Background="#22FFFFFF"
-                            BorderBrush="White" BorderThickness="1"
-                            Cursor="Hand"
-                            Click="Play_Click">
+                    <Button x:Name="PlayButton" Content="PLAY SELECTED" Width="250" Height="55" HorizontalAlignment="Left" FontWeight="Bold" FontSize="16" Foreground="White" Background="#22FFFFFF" BorderBrush="White" BorderThickness="1" Cursor="Hand" Click="PlayButton_Click">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Template">
@@ -189,6 +141,10 @@
                                                     <Setter TargetName="border" Property="Background" Value="White"/>
                                                     <Setter Property="Foreground" Value="Black"/>
                                                 </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter TargetName="border" Property="Background" Value="#11FFFFFF"/>
+                                                    <Setter Property="Foreground" Value="#888888"/>
+                                                </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Setter.Value>
@@ -196,6 +152,7 @@
                             </Style>
                         </Button.Style>
                     </Button>
+                    <TextBlock x:Name="StatusText" Text="" Foreground="Yellow" Margin="0,10,0,0" FontSize="14" TextWrapping="Wrap" MaxWidth="250"/>
                 </StackPanel>
 
                 <Grid Grid.Column="1" VerticalAlignment="Center">
@@ -203,15 +160,8 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
                     <TextBlock Text="SELECT SERVER" Foreground="#AAAAAA" FontSize="12" FontWeight="Bold" Margin="0,0,0,15"/>
-
-                    <ListBox Grid.Row="1" x:Name="ServersList" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                        <ListBoxItem Content="Vanilla Server"/>
-                        <ListBoxItem Content="Tech Forge" IsSelected="True"/>
-                        <ListBoxItem Content="Magic RPG"/>
-                        <ListBoxItem Content="Hardcore Mode"/>
-                    </ListBox>
+                    <ListBox Grid.Row="1" x:Name="ServersList" Background="Transparent" BorderThickness="0" DisplayMemberPath="Name" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Height="300"/>
                 </Grid>
             </Grid>
         </Grid>

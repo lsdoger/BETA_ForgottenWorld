@@ -1,98 +1,120 @@
-﻿using Launcher.Models;
-using System; // Потрібно для TimeSpan
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Animation; // ✅ ВАЖЛИВО: Додайте це для анімацій
+using static Launcher.LauncherController;
 
 namespace Launcher
 {
+    // 1. Успадковуємо від Window, щоб працював метод .Show()
     public partial class LoggedInPage : Window
     {
-        private readonly UserSession _currentUser;
+        private const string ApiUrl = "http://134.249.146.36:5296/api/packs";
+        private string _currentUsername;
 
-        public LoggedInPage(UserSession session)
+        // 2. Додаємо аргумент username у конструктор
+        public LoggedInPage(string username)
         {
             InitializeComponent();
-            _currentUser = session;
 
-            if (!string.IsNullOrEmpty(_currentUser.Username))
-            {
-                UsernameText.Text = _currentUser.Username.ToUpper();
-            }
-            else
-            {
-                UsernameText.Text = "PLAYER";
-            }
+            _currentUsername = username;
 
-            // Додаємо подію, щоб при розгортанні вікна з панелі задач воно плавно з'являлося назад
-            this.StateChanged += MainWindow_StateChanged;
+            // Встановлюємо нікнейм у інтерфейс
+            UsernameText.Text = _currentUsername.ToUpper();
+
+            // Завантажуємо сервери
+            LoadServers();
         }
 
-        // --- ЛОГІКА АНІМОВАНОГО ЗГОРТАННЯ ---
-        private void Minimize_Click(object sender, RoutedEventArgs e)
+        private async void LoadServers()
         {
-            // 1. Створюємо анімацію зникнення (Opacity від 1 до 0)
-            DoubleAnimation fadeOut = new DoubleAnimation
+            StatusText.Text = "Loading servers...";
+            try
             {
-                To = 0.0,
-                Duration = new Duration(TimeSpan.FromSeconds(0.3)) // Швидкість анімації
-            };
+                using (var client = new HttpClient())
+                {
+                    var packs = await client.GetFromJsonAsync<List<ServerPack>>(ApiUrl);
 
-            // 2. Що робити, коли анімація закінчилась
-            fadeOut.Completed += (s, _) =>
+                    ServersList.ItemsSource = packs;
+
+                    if (packs != null && packs.Count > 0)
+                        ServersList.SelectedIndex = 0;
+
+                    StatusText.Text = "";
+                }
+            }
+            catch (Exception)
             {
-                this.WindowState = WindowState.Minimized;
-
-                // ВАЖЛИВО: Повертаємо прозорість назад, щоб коли ми розгорнемо вікно, воно не було невидимим
-                this.BeginAnimation(UIElement.OpacityProperty, null);
-                this.Opacity = 1.0;
-            };
-
-            // 3. Запускаємо анімацію
-            this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-        }
-
-        // Цей метод робить так, що коли ти натискаєш на іконку в панелі задач, 
-        // вікно не просто "стрибає", а теж може мати логіку (тут просто скидання)
-        private void MainWindow_StateChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Normal)
-            {
-                // Тут можна додати анімацію появи, якщо хочеться, 
-                // але Windows сам непогано справляється з розгортанням.
-                // Головне переконатися, що вікно видиме:
-                this.Opacity = 1.0;
+                StatusText.Text = "Failed to connect to update server.";
+                // Фейковий список на випадок помилки
+                ServersList.ItemsSource = new List<ServerPack>
+                {
+                    new ServerPack { Name = "Offline Mode / Error" }
+                };
             }
         }
 
-        // --- ІНШІ МЕТОДИ БЕЗ ЗМІН ---
+        private async void PlayButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedServer = ServersList.SelectedItem as ServerPack;
+
+            // Перевірка на null з урахуванням нових налаштувань класу
+            if (selectedServer == null || string.IsNullOrEmpty(selectedServer.ServerIp))
+            {
+                MessageBox.Show("Please select a valid server from the list.");
+                return;
+            }
+
+            PlayButton.IsEnabled = false;
+            PlayButton.Content = "STARTING...";
+            StatusText.Text = "Checking files & installing...";
+
+            try
+            {
+                var controller = new LauncherController();
+
+                // Викликаємо метод запуску
+                await controller.LaunchGameAsync(
+                    selectedServer.MinecraftVersion ?? "1.21.1",
+                    selectedServer.Loader ?? "vanilla",
+                    _currentUsername,
+                    selectedServer.Ram > 0 ? selectedServer.Ram : 4096,
+                    selectedServer.ServerIp,
+                    selectedServer.ServerPort
+                );
+
+                StatusText.Text = "Game Launched!";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = "Error launching game.";
+                MessageBox.Show($"Error: {ex.Message}");
+            }
+            finally
+            {
+                PlayButton.IsEnabled = true;
+                PlayButton.Content = "PLAY SELECTED";
+            }
+        }
+
+        // --- Керування вікном ---
 
         private void TopMenu_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-                DragMove();
+            if (e.ChangedButton == MouseButton.Left)
+                this.DragMove();
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
-        }
-
-        private void Play_Click(object sender, RoutedEventArgs e)
-        {
-            string serverName = "Unknown Server";
-            if (ServersList.SelectedItem is ListBoxItem selectedItem && selectedItem.Content != null)
-            {
-                serverName = selectedItem.Content.ToString() ?? "Unknown";
-            }
-
-            MessageBox.Show(
-                $"Server: {serverName}\nUser: {_currentUser.Username}\nToken: {_currentUser.Token}",
-                "Starting Game...",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information
-            );
         }
     }
 }

@@ -77,7 +77,7 @@ namespace Launcher
             };
 
             // ✅ ВІДКРИВАЄМО LoggedInPage І ПЕРЕДАЄМО СЕСІЮ
-            var page = new LoggedInPage(session);
+            var page = new LoggedInPage(session.Username);
             page.Show();
 
             this.Close(); // закриваємо login
