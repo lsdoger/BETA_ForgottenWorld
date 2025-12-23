@@ -6,6 +6,8 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWPF>true</UseWPF>
+		<ApplicationIcon>Assets\favicon.ico</ApplicationIcon>
+		<AssemblyName>ForgottenWorldLauncher</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -15,6 +17,10 @@
 
 	<ItemGroup>
 		<None Remove="Assets\bg.jpg" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="Assets\favicon.ico" />
 	</ItemGroup>
 
 	<ItemGroup>

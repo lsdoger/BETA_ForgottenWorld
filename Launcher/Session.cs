@@ -8,8 +8,8 @@ namespace Launcher
 {
     public static class Session
     {
-        public static string Username { get; set; }
-        public static string Token { get; set; }
+        public static string Username { get; set; } = "";
+        public static string Token { get; set; } = "";
     }
 }
 

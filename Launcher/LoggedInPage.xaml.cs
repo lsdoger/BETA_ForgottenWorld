@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Windows;
 using System.Windows.Input;
-using static Launcher.LauncherController;
+using Launcher.Models;
 
 namespace Launcher
 {
@@ -78,7 +78,6 @@ namespace Launcher
                 // Викликаємо метод запуску
                 await controller.LaunchGameAsync(
                     selectedServer.MinecraftVersion ?? "1.21.1",
-                    selectedServer.Loader ?? "vanilla",
                     _currentUsername,
                     selectedServer.Ram > 0 ? selectedServer.Ram : 4096,
                     selectedServer.ServerIp,

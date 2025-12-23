@@ -11,7 +11,7 @@ namespace Launcher
     {
         private readonly HttpClient _http = new HttpClient
         {
-            BaseAddress = new Uri("https://localhost:7085")
+            BaseAddress = new Uri("http://134.249.146.36:5296")
         };
 
         public MainWindow()

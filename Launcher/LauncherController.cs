@@ -1,9 +1,11 @@
 ﻿using CmlLib.Core;
 using CmlLib.Core.Auth;
 using CmlLib.Core.ProcessBuilder;
+
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -13,110 +15,147 @@ namespace Launcher
 {
     public class LauncherController
     {
-        private readonly MinecraftPath _minecraftPath;
+        private readonly MinecraftPath _mcPath;
         private readonly MinecraftLauncher _launcher;
+
+        public event Action<string>? OnStatusChanged;
 
         public LauncherController()
         {
-            // Шлях до папки гри
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            _minecraftPath = new MinecraftPath(Path.Combine(appData, ".ua_minecraft_launcher"));
-
-            _launcher = new MinecraftLauncher(_minecraftPath);
+            _mcPath = new MinecraftPath(Path.Combine(appData, ".ua_minecraft_launcher"));
+            _launcher = new MinecraftLauncher(_mcPath);
         }
 
-        public async Task LaunchGameAsync(string mcVersion, string type, string username, int ramMb, string serverIp, int serverPort)
+        public async Task LaunchGameAsync(
+            string mcVersion,
+            string username,
+            int ramMb,
+            string serverIp,
+            int serverPort)
         {
-            var session = MSession.CreateOfflineSession(username);
-            string versionToLaunch = mcVersion;
-
             try
             {
-                // 1. Встановлення Fabric або Vanilla
-                if (type.ToLower().Contains("fabric"))
+                // 1. Java
+                string javaPath = await EnsureJava21Async();
+
+                // 2. Session
+                var session = MSession.CreateOfflineSession(username);
+
+                // 3. Vanilla
+                OnStatusChanged?.Invoke("Installing Minecraft...");
+                await _launcher.InstallAsync(mcVersion);
+
+                // 4. Fabric
+                string fabricVersion = await EnsureFabricViaJarAsync(mcVersion, javaPath);
+
+                // 5. Launch
+                OnStatusChanged?.Invoke("Launching Minecraft...");
+
+                var opt = new MLaunchOption
                 {
-                    // Вручну завантажуємо JSON для Fabric
-                    versionToLaunch = await InstallFabricManuallyAsync(mcVersion, "0.16.9");
-                }
-                else
-                {
-                    // Для ваніли просто вказуємо версію
-                    await _launcher.InstallAsync(mcVersion);
-                }
-
-                // 2. Оновлюємо список версій
-                var versions = await _launcher.GetAllVersionsAsync();
-
-                // Знаходимо нашу версію в списку
-                var bestVersion = versions.FirstOrDefault(v => v.Name == versionToLaunch);
-
-                if (bestVersion == null)
-                {
-                    throw new Exception($"Версію {versionToLaunch} не знайдено (спробуйте перезапустити лаунчер).");
-                }
-
-                // --- ВИПРАВЛЕННЯ ТУТ ---
-                // Ми передаємо bestVersion.Name (рядок), а не сам об'єкт
-                await _launcher.InstallAsync(bestVersion.Name);
-
-                // 3. Налаштування запуску
-                var launchOption = new MLaunchOption
-                {
-                    MaximumRamMb = ramMb,
                     Session = session,
+                    MaximumRamMb = ramMb,
+                    JavaPath = javaPath,
                     ServerIp = serverIp,
-                    ServerPort = serverPort,
-                    ScreenWidth = 1280,
-                    ScreenHeight = 720
-                    // Якщо потрібно: JavaPath = @"C:\Program Files\Java\jdk-21\bin\javaw.exe"
+                    ServerPort = serverPort
                 };
 
-                // 4. Створення та запуск процесу
-                var process = await _launcher.CreateProcessAsync(versionToLaunch, launchOption);
+                var process = await _launcher.CreateProcessAsync(fabricVersion, opt);
                 process.Start();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Помилка запуску: {ex.Message}");
+                MessageBox.Show(ex.ToString(), "Launch error");
             }
         }
-
-        private async Task<string> InstallFabricManuallyAsync(string mcVersion, string loaderVersion)
+            private async Task<string> EnsureFabricViaJarAsync(string mcVersion, string javaExe)
         {
-            var versionId = $"fabric-loader-{loaderVersion}-{mcVersion}";
-            var versionDir = Path.Combine(_minecraftPath.Versions, versionId);
-            var jsonFilePath = Path.Combine(versionDir, $"{versionId}.json");
+            string installerDir = Path.Combine(_mcPath.BasePath, "fabric-installer");
+            Directory.CreateDirectory(installerDir);
 
-            if (File.Exists(jsonFilePath)) return versionId;
+            string installerJar = Path.Combine(installerDir, "fabric-installer.jar");
 
-            try
+            if (!File.Exists(installerJar))
             {
-                var url = $"https://meta.fabricmc.net/v2/versions/loader/{mcVersion}/{loaderVersion}/profile/json";
-                using (var client = new HttpClient())
-                {
-                    var json = await client.GetStringAsync(url);
-                    Directory.CreateDirectory(versionDir);
-                    File.WriteAllText(jsonFilePath, json);
-                }
-                return versionId;
+                OnStatusChanged?.Invoke("Downloading Fabric installer...");
+                using var http = new HttpClient();
+                var data = await http.GetByteArrayAsync(
+                    "https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar"
+                );
+                await File.WriteAllBytesAsync(installerJar, data);
             }
-            catch (Exception ex)
+
+            OnStatusChanged?.Invoke("Installing Fabric...");
+
+            var psi = new ProcessStartInfo
             {
-                throw new Exception($"Не вдалося завантажити профіль Fabric: {ex.Message}");
-            }
+                FileName = javaExe,
+                Arguments = $"-jar \"{installerJar}\" client -mcversion {mcVersion} -dir \"{_mcPath.BasePath}\" -noprofile",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            var p = Process.Start(psi);
+            p.WaitForExit();
+
+            // знайти створену fabric-версію
+            var version = Directory
+                .GetDirectories(Path.Combine(_mcPath.BasePath, "versions"), "fabric-loader-*")
+                .OrderByDescending(d => d)
+                .First();
+
+            return Path.GetFileName(version);
         }
 
-        public class ServerPack
+        private async Task<string> EnsureJava21Async()
         {
-            public string? Id { get; set; }
-            public string? Name { get; set; }
-            public string? MinecraftVersion { get; set; }
-            public string? Loader { get; set; }
-            public string? LoaderVersion { get; set; }
-            public int Java { get; set; }
-            public int Ram { get; set; }
-            public string? ServerIp { get; set; }
-            public int ServerPort { get; set; }
+            string baseDir = _mcPath.BasePath; // ВАЖЛИВО
+            string javaRoot = Path.Combine(baseDir, "runtime", "java21");
+            string javaExe = Path.Combine(javaRoot, "bin", "javaw.exe");
+
+            if (File.Exists(javaExe))
+                return javaExe;
+
+            Directory.CreateDirectory(baseDir);
+
+            OnStatusChanged?.Invoke("Downloading Java 21...");
+
+            using var http = new HttpClient();
+            var zip = await http.GetByteArrayAsync(
+                "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse"
+            );
+
+            string zipPath = Path.Combine(baseDir, "java21.zip");
+            await File.WriteAllBytesAsync(zipPath, zip);
+
+            string extractDir = Path.Combine(baseDir, "runtime", "java_tmp");
+            if (Directory.Exists(extractDir))
+                Directory.Delete(extractDir, true);
+
+            ZipFile.ExtractToDirectory(zipPath, extractDir, true);
+            File.Delete(zipPath);
+
+            // 🔍 шукаємо javaw.exe де б він не був
+            var found = Directory
+                .GetFiles(extractDir, "javaw.exe", SearchOption.AllDirectories)
+                .FirstOrDefault();
+
+            if (found == null)
+                throw new Exception("Java installation failed: javaw.exe not found");
+
+            var home = Directory.GetParent(found)!.Parent!.FullName;
+
+            if (Directory.Exists(javaRoot))
+                Directory.Delete(javaRoot, true);
+
+            Directory.Move(home, javaRoot);
+
+            // прибираємо тимчасову папку
+            if (Directory.Exists(extractDir))
+                Directory.Delete(extractDir, true);
+
+            return javaExe;
         }
     }
 }
