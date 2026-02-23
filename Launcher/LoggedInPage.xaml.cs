@@ -11,7 +11,7 @@ namespace Launcher
     // 1. Успадковуємо від Window, щоб працював метод .Show()
     public partial class LoggedInPage : Window
     {
-        private const string ApiUrl = "http://134.249.146.36:5296/api/packs";
+        private const string ApiUrl = AppConfig.BaseApiUrl + "/api/packs";
         private string _currentUsername;
 
         // 2. Додаємо аргумент username у конструктор
