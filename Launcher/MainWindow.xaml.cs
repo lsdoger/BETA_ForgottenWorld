@@ -1,31 +1,123 @@
 ﻿using Launcher.Models;
+using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Media.Animation;
+using Application = System.Windows.Application;
 
 namespace Launcher
 {
     public partial class MainWindow : Window
     {
+        // =========================
+        // === FIELDS ==============
+        // =========================
         private readonly HttpClient _http = new HttpClient
         {
             BaseAddress = new Uri("http://134.249.146.36:5296")
         };
 
+        private NotifyIcon? _trayIcon;
+        private bool _realExit = false;
+        private Process? _minecraftProcess;
+
+        // =========================
+        // === CONSTRUCTOR =========
+        // =========================
         public MainWindow()
         {
             InitializeComponent();
+            InitTray();
         }
 
+        // =========================
+        // === TRAY ================
+        // =========================
+        private void InitTray()
+        {
+            try
+            {
+                string iconPath = System.IO.Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "launcher.ico"
+                );
+
+                _trayIcon = new NotifyIcon
+                {
+                    Icon = System.IO.File.Exists(iconPath)
+                        ? new System.Drawing.Icon(iconPath)
+                        : System.Drawing.SystemIcons.Application,
+                    Text = "ForgottenWorld",
+                    Visible = true
+                };
+
+                _trayIcon.DoubleClick += (s, e) => RestoreWindow();
+
+                var menu = new ContextMenuStrip();
+                menu.Items.Add("Open Launcher", null, (s, e) => RestoreWindow());
+                menu.Items.Add("Exit", null, (s, e) =>
+                {
+                    _realExit = true;
+                    KillMinecraft();
+                    _trayIcon!.Visible = false;
+                    Application.Current.Shutdown();
+                });
+
+                _trayIcon.ContextMenuStrip = menu;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    "Tray init failed:\n" + ex.Message,
+                    "Launcher error"
+                );
+            }
+        }
+
+        private void RestoreWindow()
+        {
+            Show();
+            WindowState = WindowState.Normal;
+            Activate();
+        }
+
+        // =========================
+        // === CLOSE BEHAVIOR ======
+        // =========================
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            if (!_realExit)
+            {
+                e.Cancel = true;
+                Hide();
+
+                _trayIcon?.ShowBalloonTip(
+                    1000,
+                    "Launcher minimized",
+                    "Launcher is running in system tray",
+                    ToolTipIcon.Info
+                );
+            }
+            else
+            {
+                base.OnClosing(e);
+            }
+        }
+
+        // =========================
+        // === LOGIN & PLAY ========
+        // =========================
         private async void Play_Click(object sender, RoutedEventArgs e)
         {
-            string username = UsernameBox.Text?.Trim();
+            string? username = UsernameBox.Text?.Trim();
 
             if (string.IsNullOrEmpty(username))
             {
-                MessageBox.Show("Enter username");
+                System.Windows.MessageBox.Show("Enter username");
                 return;
             }
 
@@ -41,49 +133,47 @@ namespace Launcher
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Backend not available:\n" + ex.Message);
+                System.Windows.MessageBox.Show("Backend not available:\n" + ex.Message);
                 return;
             }
 
             if (!response.IsSuccessStatusCode)
             {
-                MessageBox.Show("Login failed");
+                System.Windows.MessageBox.Show("Login failed");
                 return;
             }
 
             var responseJson = await response.Content.ReadAsStringAsync();
 
-            // 👇 ДОДАЙТЕ ЦІ НАЛАШТУВАННЯ 👇
             var options = new JsonSerializerOptions
             {
-                PropertyNameCaseInsensitive = true // Це дозволяє читати "username" як "Username"
+                PropertyNameCaseInsensitive = true
             };
 
-            var auth = JsonSerializer.Deserialize<AuthResponse>(responseJson, options); // Передаємо options сюди
+            var auth = JsonSerializer.Deserialize<AuthResponse>(responseJson, options);
 
-            // Тепер auth.Username не буде пустим
             if (auth == null)
             {
-                MessageBox.Show("Помилка обробки даних від сервера");
+                System.Windows.MessageBox.Show("Invalid server response");
                 return;
             }
 
-            // Створення сесії
             var session = new UserSession
             {
                 UserId = auth.UserId,
-                Username = auth.Username, // Тепер тут буде "admin"
+                Username = auth.Username,
                 Token = auth.Token
             };
 
-            // ✅ ВІДКРИВАЄМО LoggedInPage І ПЕРЕДАЄМО СЕСІЮ
             var page = new LoggedInPage(session.Username);
             page.Show();
 
-            this.Close(); // закриваємо login
+            Hide();
         }
 
-
+        // =========================
+        // === WINDOW CONTROLS =====
+        // =========================
         private void TopMenu_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
@@ -92,50 +182,60 @@ namespace Launcher
 
         private void Button_Close_Click(object sender, RoutedEventArgs e)
         {
-            Close();
-        }
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
+            Close(); // в трей
         }
 
-        // Метод для згортання вікна
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Створюємо анімацію зникнення (Opacity від 1 до 0)
             DoubleAnimation fadeOut = new DoubleAnimation
             {
                 To = 0.0,
-                Duration = new Duration(TimeSpan.FromSeconds(0.3)) // Швидкість анімації
+                Duration = TimeSpan.FromSeconds(0.25)
             };
 
-            // 2. Що робити, коли анімація закінчилась
             fadeOut.Completed += (s, _) =>
             {
-                this.WindowState = WindowState.Minimized;
-
-                // ВАЖЛИВО: Повертаємо прозорість назад, щоб коли ми розгорнемо вікно, воно не було невидимим
-                this.BeginAnimation(UIElement.OpacityProperty, null);
-                this.Opacity = 1.0;
+                WindowState = WindowState.Minimized;
+                BeginAnimation(UIElement.OpacityProperty, null);
+                Opacity = 1.0;
             };
 
-            // 3. Запускаємо анімацію
-            this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            BeginAnimation(UIElement.OpacityProperty, fadeOut);
         }
 
-        // Метод для відкриття налаштувань
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
-            // Створюємо нове вікно налаштувань
-            SettingsWindow settingsWin = new SettingsWindow();
-            // Встановлюємо головне вікно як власника, щоб налаштування відкривались поверх
-            settingsWin.Owner = this;
-            // Відкриваємо як діалогове вікно (блокує головне вікно, поки не закриєш налаштування)
+            var settingsWin = new SettingsWindow
+            {
+                Owner = this
+            };
             settingsWin.ShowDialog();
         }
 
+        // =========================
+        // === MINECRAFT PROCESS ===
+        // =========================
+        public void SetMinecraftProcess(Process process)
+        {
+            _minecraftProcess = process;
+        }
+
+        private void KillMinecraft()
+        {
+            try
+            {
+                if (_minecraftProcess != null && !_minecraftProcess.HasExited)
+                {
+                    _minecraftProcess.Kill(true);
+                }
+            }
+            catch { }
+        }
     }
 
+    // =========================
+    // === DTO =================
+    // =========================
     public class AuthResponse
     {
         public string UserId { get; set; } = "";
