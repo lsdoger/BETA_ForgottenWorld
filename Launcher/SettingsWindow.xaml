@@ -1,6 +1,7 @@
-﻿<Window x:Class="Launcher.SettingsWindow"
+﻿<local:BaseWindow x:Class="Launcher.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Launcher"
         Title="Settings"
         Height="400"
         Width="600"
@@ -60,7 +61,7 @@
                                 Background="Transparent"
                                 Foreground="White"
                                 BorderThickness="0"
-                                Click="CloseBtn_Click"
+                                Click="CloseWindow"
                                 Cursor="Hand">
                             <Button.Style>
                                 <Style TargetType="Button">
@@ -96,4 +97,4 @@
             </Grid>
         </Border>
     </Grid>
-</Window>
+</local:BaseWindow>
