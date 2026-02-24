@@ -14,24 +14,11 @@ using System.Windows.Shapes;
 
 namespace Launcher
 {
-    public partial class SettingsWindow : Window
+    public partial class SettingsWindow : BaseWindow
     {
         public SettingsWindow()
         {
             InitializeComponent();
-        }
-
-        // Перетягування вікна
-        private void TopMenu_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left)
-                this.DragMove();
-        }
-
-        // Закриття вікна
-        private void CloseBtn_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
         }
     }
 }

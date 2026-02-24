@@ -9,7 +9,7 @@ using Launcher.Models;
 namespace Launcher
 {
     // 1. Успадковуємо від Window, щоб працював метод .Show()
-    public partial class LoggedInPage : Window
+    public partial class LoggedInPage : BaseWindow
     {
         private const string ApiUrl = AppConfig.BaseApiUrl + "/api/packs";
         private string _currentUsername;
@@ -96,24 +96,6 @@ namespace Launcher
                 PlayButton.IsEnabled = true;
                 PlayButton.Content = "PLAY SELECTED";
             }
-        }
-
-        // --- Керування вікном ---
-
-        private void TopMenu_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left)
-                this.DragMove();
-        }
-
-        private void Minimize_Click(object sender, RoutedEventArgs e)
-        {
-            this.WindowState = WindowState.Minimized;
-        }
-
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
         }
     }
 }

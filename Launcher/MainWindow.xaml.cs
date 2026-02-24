@@ -11,7 +11,7 @@ using Application = System.Windows.Application;
 
 namespace Launcher
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : BaseWindow
     {
         // =========================
         // === FIELDS ==============
@@ -167,41 +167,12 @@ namespace Launcher
 
             var page = new LoggedInPage(session.Username);
             page.Show();
-
             Hide();
         }
 
         // =========================
         // === WINDOW CONTROLS =====
         // =========================
-        private void TopMenu_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
-                DragMove();
-        }
-
-        private void Button_Close_Click(object sender, RoutedEventArgs e)
-        {
-            Close(); // в трей
-        }
-
-        private void Minimize_Click(object sender, RoutedEventArgs e)
-        {
-            DoubleAnimation fadeOut = new DoubleAnimation
-            {
-                To = 0.0,
-                Duration = TimeSpan.FromSeconds(0.25)
-            };
-
-            fadeOut.Completed += (s, _) =>
-            {
-                WindowState = WindowState.Minimized;
-                BeginAnimation(UIElement.OpacityProperty, null);
-                Opacity = 1.0;
-            };
-
-            BeginAnimation(UIElement.OpacityProperty, fadeOut);
-        }
 
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
